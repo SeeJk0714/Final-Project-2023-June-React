@@ -82,13 +82,11 @@ export default function ShowBill() {
     const updateMutation = useMutation({
         mutationFn: updateBill,
         onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ["bills"],
-            });
             notifications.show({
-                title: "Status Edited",
+                title: "Product Edited",
                 color: "green",
             });
+            navigate("/");
         },
         onError: (error) => {
             notifications.show({
@@ -97,6 +95,15 @@ export default function ShowBill() {
             });
         },
     });
+
+    const handleUpdateBill = () => {
+        updateMutation.mutate({
+            id: id,
+            data: JSON.stringify({
+                status: status,
+            }),
+        });
+    };
 
     const doUpload = () => {
         // let error = false;
