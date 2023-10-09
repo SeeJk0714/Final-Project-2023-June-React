@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { notifications } from "@mantine/notifications";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useCookies } from "react-cookie";
 import {
     Card,
     Title,
@@ -16,13 +17,21 @@ import {
     Text,
 } from "@mantine/core";
 import { addBill } from "../api/bill";
+import { getBudget } from "../api/budget";
 
 export default function Income() {
+    const [cookies] = useCookies(["currentUser"]);
+    const { currentUser } = cookies;
     const navigate = useNavigate();
+    const { id } = useParams();
     const [source, setSource] = useState("");
     const [amount, setAmount] = useState(0);
     const [category, setCategory] = useState("");
     const [model, setModel] = useState("Income");
+    const { isLoading } = useQuery({
+        queryKey: ["budget", id],
+        queryFn: () => getBudget(id),
+    });
 
     const createMutation = useMutation({
         mutationFn: addBill,
@@ -31,7 +40,7 @@ export default function Income() {
                 title: "Income Added",
                 color: "green",
             });
-            navigate("/showbill");
+            navigate(`/showbill/${id}`);
         },
         onError: (error) => {
             notifications.show({
@@ -49,6 +58,7 @@ export default function Income() {
                 amount: amount,
                 category: category,
                 model: model,
+                budgets: id,
             })
         );
     };
@@ -100,7 +110,7 @@ export default function Income() {
                 <Group>
                     <Button
                         component={Link}
-                        to="/showbill"
+                        to={`/showbill/${id}`}
                         variant="outline"
                         color="gray"
                     >

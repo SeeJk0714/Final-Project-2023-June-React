@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { notifications } from "@mantine/notifications";
-import { useMutation } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
     Card,
     Title,
@@ -15,13 +15,19 @@ import {
     Table,
 } from "@mantine/core";
 import { addBill } from "../api/bill";
+import { getBudget } from "../api/budget";
 
 export default function Expenses() {
     const navigate = useNavigate();
+    const { id } = useParams();
     const [source, setSource] = useState("");
     const [amount, setAmount] = useState(0);
     const [category, setCategory] = useState("");
     const [model, setModel] = useState("Expenses");
+    const { isLoading } = useQuery({
+        queryKey: ["budget", id],
+        queryFn: () => getBudget(id),
+    });
 
     const createMutation = useMutation({
         mutationFn: addBill,
@@ -30,7 +36,7 @@ export default function Expenses() {
                 title: "Expenses Added",
                 color: "green",
             });
-            navigate("/showbill");
+            navigate(`/showbill/${id}`);
         },
         onError: (error) => {
             notifications.show({
@@ -48,6 +54,7 @@ export default function Expenses() {
                 amount: amount,
                 category: category,
                 model: model,
+                budgets: id,
             })
         );
     };
@@ -110,7 +117,7 @@ export default function Expenses() {
                 <Group>
                     <Button
                         component={Link}
-                        to="/showbill"
+                        to={`/showbill/${id}`}
                         variant="outline"
                         color="gray"
                     >

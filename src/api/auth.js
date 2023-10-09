@@ -25,3 +25,8 @@ export const registerUser = async (data) => {
     });
     return response.data;
 };
+
+export const getUser = async (id) => {
+    const response = await axios.get(API_URL + "/users/" + id);
+    return response.data;
+};

@@ -3,6 +3,7 @@ import { notifications } from "@mantine/notifications";
 import { useDisclosure } from "@mantine/hooks";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useCookies } from "react-cookie";
 import {
     Card,
     Title,
@@ -22,131 +23,132 @@ import {
     TbArrowBigDownLineFilled,
 } from "react-icons/tb";
 import { fetchBills, deleteBill, updateBill, getBill } from "../api/bill";
-import { createBudget } from "../api/budget";
+import { createBudget, fetchBudgets, getBudget } from "../api/budget";
 
 export default function ShowBill() {
+    const [cookies] = useCookies(["currentUser"]);
+    const { currentUser } = cookies;
+    const { id } = useParams();
     const queryClient = useQueryClient();
     const navigate = useNavigate();
-    const { id } = useParams();
     const [opened, { open, close }] = useDisclosure(false);
+    const [bill, setBill] = useState("");
+    const [date, setDate] = useState("");
     const [status, setStatus] = useState("Done");
-    const { data: bills = [] } = useQuery({
-        queryKey: ["bills"],
-        queryFn: () => fetchBills(),
+    const { isLoading } = useQuery({
+        queryKey: ["budget", id],
+        queryFn: () => getBudget(id),
+        onSuccess: (data) => {
+            console.log(data);
+            setDate(data.date);
+            setBill(data.bills);
+        },
     });
-    // const { isLoading } = useQuery({
-    //     queryKey: ["bills", id],
-    //     queryFn: () => getBill(id),
-    //     onSuccess: (data) => {
-    //         setStatus(data.status);
+    // const { data: budgets = [] } = useQuery({
+    //     queryKey: ["budgets"],
+    //     queryFn: () => fetchBudgets(currentUser ? currentUser.token : ""),
+    // });
+
+    // const calculateTotalIncome = () => {
+    //     let itotal = 0;
+    //     bills
+    //         .filter((i) => i.model === "Income" && i.status === "Undone")
+    //         .forEach((i) => {
+    //             itotal += parseInt(i.amount);
+    //         });
+    //     return itotal;
+    // };
+
+    // const calculateTotalExpenses = () => {
+    //     let etotal = 0;
+    //     bills
+    //         .filter((e) => e.model === "Expenses" && e.status === "Undone")
+    //         .forEach((e) => {
+    //             etotal += parseInt(e.amount);
+    //         });
+    //     return etotal;
+    // };
+
+    // const createBudgetMutation = useMutation({
+    //     mutationFn: createBudget,
+    //     onSuccess: () => {
+    //         notifications.show({
+    //             title: "Upload Done",
+    //             color: "green",
+    //         });
+    //     },
+    //     onError: (error) => {
+    //         notifications.show({
+    //             title: error.response.data.message,
+    //             color: "red",
+    //         });
     //     },
     // });
 
-    const calculateTotalIncome = () => {
-        let itotal = 0;
-        bills
-            .filter((i) => i.model === "Income" && i.status === "Undone")
-            .forEach((i) => {
-                itotal += parseInt(i.amount);
-            });
-        return itotal;
-    };
+    // const updateMutation = useMutation({
+    //     mutationFn: updateBill,
+    //     onSuccess: () => {
+    //         navigate("/history");
+    //     },
+    //     onError: (error) => {
+    //         notifications.show({
+    //             title: error.response.data.message,
+    //             color: "red",
+    //         });
+    //     },
+    // });
 
-    const calculateTotalExpenses = () => {
-        let etotal = 0;
-        bills
-            .filter((e) => e.model === "Expenses" && e.status === "Undone")
-            .forEach((e) => {
-                etotal += parseInt(e.amount);
-            });
-        return etotal;
-    };
+    // const doUpload = () => {
+    //     // let error = false;
+    //     // if (!date) {
+    //     //     error = "Please fill out all the required fields.";
+    //     // }
 
-    const createBudgetMutation = useMutation({
-        mutationFn: createBudget,
-        onSuccess: () => {
-            notifications.show({
-                title: "Upload Done",
-                color: "green",
-            });
-            navigate("/");
-        },
-        onError: (error) => {
-            notifications.show({
-                title: error.response.data.message,
-                color: "red",
-            });
-        },
-    });
+    //     // if (error) {
+    //     //     notifications.show({
+    //     //         title: error,
+    //     //         color: "red",
+    //     //     });
+    //     // } else {
+    //     //     createBudgetMutation.mutate(
+    //     //         JSON.stringify({
+    //     //             totalAmount:
+    //     //                 calculateTotalIncome() - calculateTotalExpenses(),
+    //     //             bills: bills.map((i) => i._id),
+    //     //         })
+    //     //     );
+    //     // }
 
-    const updateMutation = useMutation({
-        mutationFn: updateBill,
-        onSuccess: () => {
-            notifications.show({
-                title: "Product Edited",
-                color: "green",
-            });
-            navigate("/");
-        },
-        onError: (error) => {
-            notifications.show({
-                title: error.response.data.message,
-                color: "red",
-            });
-        },
-    });
+    //     //upload to budget
+    //     // createBudgetMutation.mutate(
+    //     //     JSON.stringify({
+    //     //         totalAmount: calculateTotalIncome() - calculateTotalExpenses(),
+    //     //         bills: bills
+    //     //             .filter((bill) => bill.status === "Undone")
+    //     //             .map((i) => i._id),
+    //     //     })
+    //     // );
 
-    const handleUpdateBill = () => {
-        updateMutation.mutate({
-            id: id,
-            data: JSON.stringify({
-                status: status,
-            }),
-        });
-    };
+    //     updateMutation.mutate({
+    //         bills: bills,
+    //         data: JSON.stringify({
+    //             status: status,
+    //         }),
+    //     });
+    // };
 
-    const doUpload = () => {
-        // let error = false;
-        // if (!date) {
-        //     error = "Please fill out all the required fields.";
-        // }
-
-        // if (error) {
-        //     notifications.show({
-        //         title: error,
-        //         color: "red",
-        //     });
-        // } else {
-        //     createBudgetMutation.mutate(
-        //         JSON.stringify({
-        //             totalAmount:
-        //                 calculateTotalIncome() - calculateTotalExpenses(),
-        //             bills: bills.map((i) => i._id),
-        //         })
-        //     );
-        // }
-
-        //upload to budget
-        createBudgetMutation.mutate(
-            JSON.stringify({
-                totalAmount: calculateTotalIncome() - calculateTotalExpenses(),
-                bills: bills.map((i) => i._id),
-            })
-        );
-    };
-
-    const deleteMutation = useMutation({
-        mutationFn: deleteBill,
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ["bills"],
-            });
-            notifications.show({
-                title: "Bill Deleted",
-                color: "green",
-            });
-        },
-    });
+    // const deleteMutation = useMutation({
+    //     mutationFn: deleteBill,
+    //     onSuccess: () => {
+    //         queryClient.invalidateQueries({
+    //             queryKey: ["bills"],
+    //         });
+    //         notifications.show({
+    //             title: "Bill Deleted",
+    //             color: "green",
+    //         });
+    //     },
+    // });
 
     return (
         <>
@@ -155,8 +157,10 @@ export default function ShowBill() {
             </Title>
             <Space h="20px" />
             <Container>
+                <Text>{date.slice(0, 10)}</Text>
+                <Space h="20px" />
                 <Card shadow="sm" padding="lg" radius="md" withBorder>
-                    <Table highlightOnHover withTableBorder>
+                    <Table highlightOnHover withBorder>
                         <thead>
                             <tr>
                                 <th></th>
@@ -168,7 +172,50 @@ export default function ShowBill() {
                             </tr>
                         </thead>
                         <tbody>
-                            {bills.filter((bill) => bill.status === "Undone")
+                            {bill ? (
+                                bill.map((b, index) => {
+                                    console.log(index);
+                                    return (
+                                        <tr key={index}>
+                                            <td>
+                                                {b.model === "Income" ? (
+                                                    <TbArrowBigUpLineFilled
+                                                        color="green"
+                                                        size="20px"
+                                                    />
+                                                ) : (
+                                                    <TbArrowBigDownLineFilled
+                                                        color="red"
+                                                        size="20px"
+                                                    />
+                                                )}
+                                            </td>
+                                            <td>{b.date}</td>
+                                            <td>{b.source}</td>
+                                            <td>{b.category}</td>
+                                            <td>{b.amount}</td>
+                                            {/* <td>
+                                                <Button
+                                                    variant="outline"
+                                                    color="red"
+                                                    onClick={() => {
+                                                        deleteMutation.mutate(
+                                                            b._id
+                                                        );
+                                                    }}
+                                                >
+                                                    Delete
+                                                </Button>
+                                            </td> */}
+                                        </tr>
+                                    );
+                                })
+                            ) : (
+                                <tr>
+                                    <td colSpan={6}>No income added yet.</td>
+                                </tr>
+                            )}
+                            {/* {bills.filter((bill) => bill.status === "Undone")
                                 .length === 0 ? (
                                 <tr>
                                     <td colSpan={6}>No income added yet.</td>
@@ -212,13 +259,13 @@ export default function ShowBill() {
                                             </tr>
                                         );
                                     })
-                            )}
+                            )} */}
                             <tr>
                                 <td colSpan={4}>Total</td>
                                 <td colSpan={2}>
                                     RM{" "}
-                                    {calculateTotalIncome() -
-                                        calculateTotalExpenses()}
+                                    {/* {calculateTotalIncome() -
+                                        calculateTotalExpenses()} */}
                                 </td>
                             </tr>
                         </tbody>
@@ -276,7 +323,7 @@ export default function ShowBill() {
                         </tbody> */}
                     </Table>
                 </Card>
-                <Modal
+                {/* <Modal
                     opened={opened}
                     onClose={close}
                     size="70%"
@@ -292,41 +339,43 @@ export default function ShowBill() {
                     </Text>
                     <Space h="20px" />
 
-                    {bills ? (
-                        bills.map((i) => {
-                            return (
-                                <>
-                                    <Card
-                                        shadow="sm"
-                                        padding="lg"
-                                        radius="md"
-                                        withBorder
-                                    >
-                                        <Group>
-                                            {i.model === "Income" ? (
-                                                <TbArrowBigUpLineFilled
-                                                    color="green"
-                                                    size="20px"
-                                                />
-                                            ) : (
-                                                <TbArrowBigDownLineFilled
-                                                    color="red"
-                                                    size="20px"
-                                                />
-                                            )}
-
-                                            <Text>{i.source}</Text>
-                                            <Text>RM{i.amount}</Text>
-                                        </Group>
-                                    </Card>
-                                    <Space h="10px" />
-                                </>
-                            );
-                        })
-                    ) : (
+                    {bills.filter((i) => i.status === "Undone").length === 0 ? (
                         <Text size="20px" color="red">
                             No bill added yet.
                         </Text>
+                    ) : (
+                        bills
+                            .filter((i) => i.status === "Undone")
+                            .map((i) => {
+                                return (
+                                    <div key={i._id}>
+                                        <Card
+                                            shadow="sm"
+                                            padding="lg"
+                                            radius="md"
+                                            withBorder
+                                        >
+                                            <Group>
+                                                {i.model === "Income" ? (
+                                                    <TbArrowBigUpLineFilled
+                                                        color="green"
+                                                        size="20px"
+                                                    />
+                                                ) : (
+                                                    <TbArrowBigDownLineFilled
+                                                        color="red"
+                                                        size="20px"
+                                                    />
+                                                )}
+
+                                                <Text>{i.source}</Text>
+                                                <Text>RM{i.amount}</Text>
+                                            </Group>
+                                        </Card>
+                                        <Space h="10px" />
+                                    </div>
+                                );
+                            })
                     )}
                     <Space h="20px" />
                     <Group>
@@ -334,7 +383,6 @@ export default function ShowBill() {
                             color="green"
                             onClick={() => {
                                 doUpload();
-                                // handleUpdateProduct();
                             }}
                         >
                             Done
@@ -344,13 +392,13 @@ export default function ShowBill() {
                             close
                         </Button>
                     </Group>
-                </Modal>
+                </Modal> */}
                 <Space h="30px" />
                 <Group>
-                    <Button component={Link} to="/income">
+                    <Button component={Link} to={`/income/${id}`}>
                         Income
                     </Button>
-                    <Button component={Link} to="/expenses">
+                    <Button component={Link} to={`/expenses/${id}`}>
                         Expenses
                     </Button>
                     <Button
@@ -361,9 +409,18 @@ export default function ShowBill() {
                     >
                         Go back to Budget
                     </Button>
-                    <Button variant="outline" onClick={open}>
+                    {/* <Button
+                        variant="outline"
+                        onClick={open}
+                        disabled={
+                            bills.filter((i) => i.status === "Undone")
+                                .length === 0
+                                ? true
+                                : false
+                        }
+                    >
                         Upload
-                    </Button>
+                    </Button> */}
                 </Group>
             </Container>
         </>

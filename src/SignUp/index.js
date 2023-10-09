@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { notifications } from "@mantine/notifications";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { useCookies } from "react-cookie";
 import {
     Container,
     Space,
@@ -18,6 +19,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { registerUser } from "../api/auth";
 
 export default function SignUp() {
+    const [cookies, setCookie] = useCookies(["currentUser"]);
     const navigate = useNavigate();
     const [name, setName] = useState();
     const [email, setEmail] = useState();
@@ -25,15 +27,20 @@ export default function SignUp() {
     const [confirmPassword, setConfirmPassword] = useState();
     const [visible, { toggle }] = useDisclosure(false);
 
+    // sign up mutation
     const signMutation = useMutation({
         mutationFn: registerUser,
         onSuccess: (user) => {
-            console.log(user);
+            // store user data into cookies
+            setCookie("currentUser", user, {
+                maxAge: 60 * 60 * 24 * 30, // expire in 30 days: 60(second) * 60(minutes) * 24(hour) * 30(day)
+            });
+
             notifications.show({
                 title: "Sign Up Successful",
                 color: "green",
             });
-            navigate("/login");
+            navigate("/");
         },
         onError: (error) => {
             notifications.show({
@@ -43,6 +50,7 @@ export default function SignUp() {
         },
     });
 
+    // handle submit
     const handleSubmit = () => {
         if (!name || !email || !password || !confirmPassword) {
             notifications.show({
