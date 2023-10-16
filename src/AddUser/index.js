@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { notifications } from "@mantine/notifications";
 import { Link } from "react-router-dom";
@@ -11,14 +11,15 @@ import {
     Card,
     Button,
     Group,
-    Grid,
     PasswordInput,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { registerUser } from "../api/auth";
+import { TiTickOutline } from "react-icons/ti";
 
-export default function SignUp() {
+export default function AddUser() {
     const [cookies, setCookie] = useCookies(["currentUser"]);
+    const { currentUser } = cookies;
     const navigate = useNavigate();
     const [name, setName] = useState();
     const [email, setEmail] = useState();
@@ -26,18 +27,22 @@ export default function SignUp() {
     const [confirmPassword, setConfirmPassword] = useState();
     const [visible, { toggle }] = useDisclosure(false);
 
+    const isAdmin = useMemo(() => {
+        return cookies &&
+            cookies.currentUser &&
+            cookies.currentUser.role === "admin"
+            ? true
+            : false;
+    }, [cookies]);
+
     const signMutation = useMutation({
         mutationFn: registerUser,
-        onSuccess: (user) => {
-            setCookie("currentUser", user, {
-                maxAge: 60 * 60 * 24 * 30,
-            });
-
+        onSuccess: () => {
             notifications.show({
-                title: "Sign Up Successful",
+                title: "Add Successful",
                 color: "green",
             });
-            navigate("/");
+            navigate("/manageusers");
         },
         onError: (error) => {
             notifications.show({
@@ -80,65 +85,62 @@ export default function SignUp() {
                     maxWidth: "700px",
                 }}
             >
-                <Grid gutter={20}>
-                    <Grid.Col span={6}>
-                        <TextInput
-                            value={name}
-                            placeholder="Name"
-                            label="Name"
-                            required
-                            onChange={(event) => setName(event.target.value)}
-                        />
-                        <Space h="20px" />
-                        <TextInput
-                            value={email}
-                            placeholder="Email"
-                            label="Email"
-                            required
-                            onChange={(event) => setEmail(event.target.value)}
-                        />
-                    </Grid.Col>
-                    <Grid.Col span={6}>
-                        <PasswordInput
-                            value={password}
-                            placeholder="Password"
-                            label="Password"
-                            visible={visible}
-                            onVisibilityChange={toggle}
-                            required
-                            onChange={(event) =>
-                                setPassword(event.target.value)
-                            }
-                        />
-                        <Space h="20px" />
-                        <PasswordInput
-                            value={confirmPassword}
-                            placeholder="Confirm Password"
-                            label="Confirm Password"
-                            visible={visible}
-                            onVisibilityChange={toggle}
-                            required
-                            onChange={(event) =>
-                                setConfirmPassword(event.target.value)
-                            }
-                        />
-                    </Grid.Col>
-                </Grid>
+                <TextInput
+                    value={name}
+                    placeholder="Name"
+                    label="Name"
+                    required
+                    onChange={(event) => setName(event.target.value)}
+                />
+                <Space h="20px" />
+                <TextInput
+                    value={email}
+                    placeholder="Email"
+                    label="Email"
+                    required
+                    onChange={(event) => setEmail(event.target.value)}
+                />
+                <Space h="20px" />
+                <PasswordInput
+                    value={password}
+                    placeholder="Password"
+                    label="Password"
+                    visible={visible}
+                    onVisibilityChange={toggle}
+                    required
+                    onChange={(event) => setPassword(event.target.value)}
+                />
+                <Space h="20px" />
+                <PasswordInput
+                    value={confirmPassword}
+                    placeholder="Confirm Password"
+                    label="Confirm Password"
+                    visible={visible}
+                    onVisibilityChange={toggle}
+                    required
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                />
                 <Space h="40px" />
                 <Group position="center">
-                    <Button onClick={handleSubmit}>Submit</Button>
+                    <Button
+                        color="green"
+                        onClick={handleSubmit}
+                        disabled={isAdmin ? false : true}
+                    >
+                        Submit <TiTickOutline size="20" />
+                    </Button>
                 </Group>
             </Card>
             <Space h="20px" />
             <Group position="center">
                 <Button
                     component={Link}
-                    to="/"
+                    to="/manageusers"
                     variant="subtle"
                     size="xs"
                     color="gray"
                 >
-                    Go back to Home
+                    Go back to Manage Users
                 </Button>
             </Group>
         </Container>

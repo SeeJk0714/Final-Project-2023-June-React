@@ -9,13 +9,9 @@ import {
     Space,
     Card,
     TextInput,
-    NumberInput,
     Divider,
     Button,
     Group,
-    Textarea,
-    Select,
-    ActionIcon,
 } from "@mantine/core";
 import { RichTextEditor, Link as EditorLink } from "@mantine/tiptap";
 import { useEditor } from "@tiptap/react";
@@ -24,8 +20,9 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import { TimeInput, DatePickerInput } from "@mantine/dates";
-import { IconClock } from "@tabler/icons-react";
 import { addPlan } from "../api/plan";
+import { IconClock } from "@tabler/icons-react";
+import { IoIosAddCircleOutline } from "react-icons/io";
 
 export default function AddPlan() {
     const [cookies] = useCookies(["currentUser"]);
@@ -38,6 +35,22 @@ export default function AddPlan() {
     const [endDate, setEndDate] = useState(null);
     const [startTime, setStartTime] = useState("");
     const [endTime, setEndTime] = useState("");
+
+    const isUser = useMemo(() => {
+        return cookies &&
+            cookies.currentUser &&
+            cookies.currentUser.role === "user"
+            ? true
+            : false;
+    }, [cookies]);
+
+    const isAdmin = useMemo(() => {
+        return cookies &&
+            cookies.currentUser &&
+            cookies.currentUser.role === "admin"
+            ? true
+            : false;
+    }, [cookies]);
 
     const editor = useEditor({
         extensions: [StarterKit, Underline, EditorLink, Highlight, TextAlign],
@@ -179,20 +192,25 @@ export default function AddPlan() {
 
                 <Space h="50px" />
 
-                <Button fullWidth onClick={handleAddNewPlan}>
-                    Add New Plan
+                <Button
+                    color="green"
+                    fullWidth
+                    onClick={handleAddNewPlan}
+                    disabled={isUser || isAdmin ? false : true}
+                >
+                    Add New Plan <IoIosAddCircleOutline size="20" />
                 </Button>
             </Card>
             <Space h="20px" />
             <Group position="center">
                 <Button
                     component={Link}
-                    to="/"
+                    to="/plan"
                     variant="subtle"
                     size="xs"
                     color="gray"
                 >
-                    Go back to Home
+                    Go back to Plan
                 </Button>
             </Group>
             <Space h="100px" />

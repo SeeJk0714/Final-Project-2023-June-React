@@ -1,26 +1,29 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { notifications } from "@mantine/notifications";
 import { useCookies } from "react-cookie";
 import {
     Card,
-    Title,
     Group,
     Button,
     Space,
     Text,
-    Grid,
     Container,
     Divider,
 } from "@mantine/core";
 import { deletePlan, getPlan } from "../api/plan";
+import { BsCalendar2Date } from "react-icons/bs";
+import { BiTimeFive } from "react-icons/bi";
+import { FaRegEdit } from "react-icons/fa";
+import { MdOutlineEditOff } from "react-icons/md";
 
 export default function ShowPlan() {
     const [cookies] = useCookies(["currentUser"]);
     const { currentUser } = cookies;
     const { id } = useParams();
     const navigate = useNavigate();
+    const [email, setEmail] = useState("");
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [startDate, setStartDate] = useState(null);
@@ -31,6 +34,7 @@ export default function ShowPlan() {
         queryKey: ["plan", id],
         queryFn: () => getPlan(id),
         onSuccess: (data) => {
+            setEmail(data.customerEmail);
             setTitle(data.title);
             setContent(data.content);
             setStartDate(data.startDate);
@@ -39,6 +43,22 @@ export default function ShowPlan() {
             setEndTime(data.endTime);
         },
     });
+
+    const isUser = useMemo(() => {
+        return cookies &&
+            cookies.currentUser &&
+            cookies.currentUser.role === "user"
+            ? true
+            : false;
+    }, [cookies]);
+
+    const isAdmin = useMemo(() => {
+        return cookies &&
+            cookies.currentUser &&
+            cookies.currentUser.role === "admin"
+            ? true
+            : false;
+    }, [cookies]);
 
     const deletePlanMutation = useMutation({
         mutationFn: deletePlan,
@@ -52,52 +72,79 @@ export default function ShowPlan() {
     });
     return (
         <Container>
-            <Title order={3} align="center">
-                {title}
-            </Title>
+            <Group position="apart">
+                {isUser || isAdmin ? (
+                    <Text size="40px" ta="center">
+                        {title}
+                    </Text>
+                ) : null}
+                <Group>
+                    <Button
+                        color="teal"
+                        component={Link}
+                        to={`/edit_plan/${id}`}
+                        disabled={isUser || isAdmin ? false : true}
+                    >
+                        <FaRegEdit size="20" />
+                    </Button>
+                    <Button
+                        color="red"
+                        disabled={isUser || isAdmin ? false : true}
+                        onClick={() => {
+                            deletePlanMutation.mutate({
+                                id: id,
+                                token: currentUser ? currentUser.token : "",
+                            });
+                        }}
+                    >
+                        <MdOutlineEditOff size="20" />
+                    </Button>
+                </Group>
+            </Group>
             <Space h="20px" />
             <Divider />
             <Space h="20px" />
-            <Text>
-                <div
-                    dangerouslySetInnerHTML={{
-                        __html: content,
-                    }}
-                />
-            </Text>
-            <Text>
-                {startDate ? new Date(startDate).toLocaleDateString() : ""}
-            </Text>
-            <Text>{endDate ? new Date(endDate).toLocaleDateString() : ""}</Text>
-            <Text>{startTime}</Text>
-            <Text>{endTime}</Text>
+            <Group>
+                {isUser || isAdmin ? (
+                    <Card hadow="sm" padding="lg" radius="md" withBorder>
+                        {isAdmin && <Text>User: {email}</Text>}
+                        <Text>
+                            <BsCalendar2Date /> Date:{" "}
+                            {startDate
+                                ? new Date(startDate).toLocaleDateString()
+                                : ""}{" "}
+                            -
+                            {endDate
+                                ? new Date(endDate).toLocaleDateString()
+                                : ""}
+                        </Text>
+                        <Text>
+                            <BiTimeFive /> Time: {startTime} - {endTime}
+                        </Text>
+                    </Card>
+                ) : null}
+            </Group>
+
+            <Space h="20px" />
+            {isUser || isAdmin ? (
+                <Text>
+                    <div
+                        dangerouslySetInnerHTML={{
+                            __html: content,
+                        }}
+                    />
+                </Text>
+            ) : null}
 
             <Space h="70px" />
-            <Group>
-                <Button component={Link} to={`/edit_plan/${id}`} size="xs">
-                    edit
-                </Button>
-                <Button
-                    size="xs"
-                    color="red"
-                    onClick={() => {
-                        deletePlanMutation.mutate({
-                            id: id,
-                            token: currentUser ? currentUser.token : "",
-                        });
-                    }}
-                >
-                    delete
-                </Button>
-            </Group>
             <Button
                 component={Link}
-                to="/"
+                to="/plan"
                 variant="subtle"
                 size="xs"
                 color="gray"
             >
-                Go back to Home
+                Go back to Plan
             </Button>
         </Container>
     );

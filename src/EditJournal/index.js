@@ -9,11 +9,10 @@ import {
     Space,
     Card,
     TextInput,
-    NumberInput,
+    PasswordInput,
     Divider,
     Button,
     Group,
-    Textarea,
     Select,
 } from "@mantine/core";
 import { RichTextEditor, Link as EditorLink } from "@mantine/tiptap";
@@ -22,33 +21,63 @@ import Highlight from "@tiptap/extension-highlight";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
-import { addJournal, getJournal, updateJournal } from "../api/journal";
+import { getJournal, updateJournal } from "../api/journal";
+import { TiTickOutline } from "react-icons/ti";
 
 export default function EditJournal() {
     const [cookies] = useCookies(["currentUser"]);
     const { currentUser } = cookies;
     const { id } = useParams();
     const navigate = useNavigate();
+    const [journal, setJouranl] = useState({});
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [status, setStatus] = useState("");
+    const [password, setPassword] = useState("");
     const { isLoading } = useQuery({
         queryKey: ["journal", id],
         queryFn: () => getJournal(id),
         onSuccess: (data) => {
+            setJouranl(data);
             setTitle(data.title);
             setContent(data.content);
             setStatus(data.status);
+            setPassword(data.password);
         },
     });
 
-    const editor = useEditor({
-        extensions: [StarterKit, Underline, EditorLink, Highlight, TextAlign],
-        content: content,
-        onUpdate: ({ editor }) => {
-            setContent(editor.getHTML());
+    const isUser = useMemo(() => {
+        return cookies &&
+            cookies.currentUser &&
+            cookies.currentUser.role === "user"
+            ? true
+            : false;
+    }, [cookies]);
+
+    const isAdmin = useMemo(() => {
+        return cookies &&
+            cookies.currentUser &&
+            cookies.currentUser.role === "admin"
+            ? true
+            : false;
+    }, [cookies]);
+
+    const editor = useEditor(
+        {
+            extensions: [
+                StarterKit,
+                Underline,
+                EditorLink,
+                Highlight,
+                TextAlign,
+            ],
+            content: content,
+            onUpdate: ({ editor }) => {
+                setContent(editor.getHTML());
+            },
         },
-    });
+        [journal]
+    );
 
     const updateMutation = useMutation({
         mutationFn: updateJournal,
@@ -57,7 +86,7 @@ export default function EditJournal() {
                 title: "Journal Edited",
                 color: "green",
             });
-            navigate("/journal");
+            navigate("/");
         },
         onError: (error) => {
             notifications.show({
@@ -75,6 +104,7 @@ export default function EditJournal() {
                 title: title,
                 content: content,
                 status: status,
+                password: password,
             }),
             token: currentUser ? currentUser.token : "",
         });
@@ -90,7 +120,7 @@ export default function EditJournal() {
             <Card withBorder shadow="md" p="20px">
                 <TextInput
                     value={title}
-                    placeholder="Enter the movie title here"
+                    placeholder="Enter the journal title here"
                     label="Title"
                     onChange={(event) => setTitle(event.target.value)}
                 />
@@ -132,10 +162,28 @@ export default function EditJournal() {
                     value={status}
                     onChange={setStatus}
                 />
-                <Space h="50px" />
 
-                <Button fullWidth onClick={handleUpdateJournal}>
-                    Edit Journal
+                {status === "Private" ? (
+                    <>
+                        <Space h="30px" />
+                        <PasswordInput
+                            label="Password"
+                            placeholder="123456789"
+                            value={password}
+                            onChange={(event) => {
+                                setPassword(event.target.value);
+                            }}
+                        />
+                    </>
+                ) : null}
+                <Space h="50px" />
+                <Button
+                    color="green"
+                    fullWidth
+                    onClick={handleUpdateJournal}
+                    disabled={isUser || isAdmin ? false : true}
+                >
+                    Edit Journal <TiTickOutline size="20" />
                 </Button>
             </Card>
             <Space h="20px" />
@@ -147,7 +195,7 @@ export default function EditJournal() {
                     size="xs"
                     color="gray"
                 >
-                    Go back to Home
+                    Go back to Journal
                 </Button>
             </Group>
             <Space h="100px" />

@@ -31,22 +31,13 @@ export const addTodoList = async ({ data, token = "" }) => {
     return response.data;
 };
 
-export const updateTodoList = async ({ id, data }) => {
-    const response = await axios({
-        method: "PUT",
-        url: API_URL + "/todolists/" + id,
-        headers: {
-            "Content-Type": "application/json",
-        },
-        data: data,
-    });
-    return response.data;
-};
-
-export const deleteTodoList = async (todolist_id = "") => {
+export const deleteTodoList = async ({ id = "", token = "" }) => {
     const response = await axios({
         method: "DELETE",
-        url: API_URL + "/todolists/" + todolist_id,
+        url: API_URL + "/todolists/" + id,
+        headers: {
+            Authorization: "Bearer " + token,
+        },
     });
     return response.data;
 };

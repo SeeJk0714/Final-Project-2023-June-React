@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { notifications } from "@mantine/notifications";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useCookies } from "react-cookie";
 import {
     Card,
@@ -9,20 +9,16 @@ import {
     Group,
     Button,
     Space,
-    TextInput,
-    NumberInput,
     Container,
-    Select,
-    Table,
     Text,
-    Modal,
 } from "@mantine/core";
+import { createBudget, deleteBudget, fetchBudgets } from "../api/budget";
 import {
     TbArrowBigUpLineFilled,
     TbArrowBigDownLineFilled,
 } from "react-icons/tb";
-import { createBudget, fetchBudgets } from "../api/budget";
-import { getUser } from "../api/auth";
+import { FaMoneyBillTrendUp } from "react-icons/fa6";
+import { BsTrash } from "react-icons/bs";
 
 export default function History() {
     const [cookies] = useCookies(["currentUser"]);
@@ -33,6 +29,22 @@ export default function History() {
         queryKey: ["budgets"],
         queryFn: () => fetchBudgets(currentUser ? currentUser.token : ""),
     });
+
+    const isUser = useMemo(() => {
+        return cookies &&
+            cookies.currentUser &&
+            cookies.currentUser.role === "user"
+            ? true
+            : false;
+    }, [cookies]);
+
+    const isAdmin = useMemo(() => {
+        return cookies &&
+            cookies.currentUser &&
+            cookies.currentUser.role === "admin"
+            ? true
+            : false;
+    }, [cookies]);
 
     const createMutation = useMutation({
         mutationFn: createBudget,
@@ -63,47 +75,82 @@ export default function History() {
         });
     };
 
+    const deleteBudgetMutation = useMutation({
+        mutationFn: deleteBudget,
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["budgets"],
+            });
+            notifications.show({
+                title: "Budget List Deleted",
+                color: "green",
+            });
+        },
+    });
+
     return (
         <>
-            <Title order={3} align="center">
-                Manager Budget Lists
-            </Title>
-            <Space h="20px" />
             <Container>
-                <Group>
-                    <Button onClick={handleAddNewBudgetList}>
-                        Create New Budget List
-                    </Button>
+                <Group position="apart">
+                    <Title order={3} size="30px" align="center">
+                        Manager Budget Lists
+                    </Title>
+                    <Group>
+                        <Button
+                            component={Link}
+                            to="/budget"
+                            variant="outline"
+                            color="gray"
+                        >
+                            Go back to Manage Budget
+                        </Button>
+                        <Button
+                            color="green"
+                            onClick={handleAddNewBudgetList}
+                            disabled={isUser || isAdmin ? false : true}
+                        >
+                            Create New Budget List
+                        </Button>
+                    </Group>
                 </Group>
-                {budgets
-                    ? budgets.map((b) => {
-                          return (
-                              <div key={b._id}>
-                                  <Link
-                                      to={`/showbill/${b._id}`}
-                                      style={{ textDecoration: "none" }}
-                                  >
-                                      <Card shadow="sm" padding="lg" withBorder>
-                                          <Text>{b.date.slice(0, 10)}</Text>
-                                      </Card>
-                                  </Link>
-                              </div>
-                          );
-                      })
-                    : null}
-
-                {/* {budgets
-                    ? budgets.map((b) => {
-                          return (
-                              <Card
-                                  shadow="sm"
-                                  padding="lg"
-                                  withBorder
-                                  key={b._id}
-                              >
-                                  <Text>{b.date.slice(0, 10)}</Text>
-                                  {b.bills
-                                      ? b.bills.map((bill, index) => (
+                <Space h="20px" />
+                {(budgets.length > 0 && isUser) || isAdmin ? (
+                    budgets.map((b) => {
+                        return (
+                            <div key={b._id}>
+                                <Card shadow="sm" padding="lg" withBorder>
+                                    {isAdmin && <Text>{b.customerEmail}</Text>}
+                                    <Group position="apart">
+                                        <Title size="40">
+                                            {b.date.slice(0, 10)}
+                                        </Title>
+                                        <Group>
+                                            <Button
+                                                component={Link}
+                                                to={`/showbill/${b._id}`}
+                                            >
+                                                <FaMoneyBillTrendUp size="20" />
+                                            </Button>
+                                            <Button
+                                                color="red"
+                                                onClick={() => {
+                                                    deleteBudgetMutation.mutate(
+                                                        {
+                                                            id: b._id,
+                                                            token: currentUser
+                                                                ? currentUser.token
+                                                                : "",
+                                                        }
+                                                    );
+                                                }}
+                                            >
+                                                <BsTrash size="20" />
+                                            </Button>
+                                        </Group>
+                                    </Group>
+                                    <Space h="20px" />
+                                    {b.bills.length > 0 ? (
+                                        b.bills.map((bill, index) => (
                                             <Card withBorder key={index}>
                                                 <Group>
                                                     {bill.model === "Income" ? (
@@ -139,7 +186,8 @@ export default function History() {
                                                             ta="right"
                                                             fw={700}
                                                         >
-                                                            RM{bill.amount}
+                                                            RM
+                                                            {bill.amount}
                                                         </Text>
                                                     ) : (
                                                         <Text
@@ -147,21 +195,64 @@ export default function History() {
                                                             ta="right"
                                                             fw={700}
                                                         >
-                                                            - RM{bill.amount}
+                                                            - RM
+                                                            {bill.amount}
                                                         </Text>
                                                     )}
                                                 </Group>
                                             </Card>
                                         ))
-                                      : null}
-                                  <Space h="20px" />
-                                  <Text ta="right" size="20px">
-                                      RM {b.totalAmount}
-                                  </Text>
-                              </Card>
-                          );
-                      })
-                    : null} */}
+                                    ) : (
+                                        <Card
+                                            hadow="sm"
+                                            padding="lg"
+                                            radius="md"
+                                            withBorder
+                                            style={{
+                                                height: "200px",
+                                                width: "100%",
+                                            }}
+                                        >
+                                            <Text
+                                                size="50px"
+                                                ta="center"
+                                                color="red"
+                                                style={{
+                                                    paddingTop: "40px",
+                                                }}
+                                            >
+                                                Please Add A New Bill
+                                            </Text>
+                                        </Card>
+                                    )}
+                                    <Space h="20px" />
+                                </Card>
+                            </div>
+                        );
+                    })
+                ) : (
+                    <Card
+                        hadow="sm"
+                        padding="lg"
+                        radius="md"
+                        withBorder
+                        style={{
+                            height: "300px",
+                            width: "100%",
+                        }}
+                    >
+                        <Text
+                            size="50px"
+                            ta="center"
+                            color="red"
+                            style={{
+                                paddingTop: "40px",
+                            }}
+                        >
+                            Please Add A New Budget List
+                        </Text>
+                    </Card>
+                )}
             </Container>
         </>
     );

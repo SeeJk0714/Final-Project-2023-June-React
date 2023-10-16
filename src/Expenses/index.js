@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { notifications } from "@mantine/notifications";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useCookies } from "react-cookie";
 import {
     Card,
     Title,
@@ -12,12 +13,13 @@ import {
     NumberInput,
     Container,
     Select,
-    Table,
 } from "@mantine/core";
 import { addBill } from "../api/bill";
 import { getBudget } from "../api/budget";
 
 export default function Expenses() {
+    const [cookies] = useCookies(["currentUser"]);
+    const { currentUser } = cookies;
     const navigate = useNavigate();
     const { id } = useParams();
     const [source, setSource] = useState("");
@@ -28,6 +30,22 @@ export default function Expenses() {
         queryKey: ["budget", id],
         queryFn: () => getBudget(id),
     });
+
+    const isUser = useMemo(() => {
+        return cookies &&
+            cookies.currentUser &&
+            cookies.currentUser.role === "user"
+            ? true
+            : false;
+    }, [cookies]);
+
+    const isAdmin = useMemo(() => {
+        return cookies &&
+            cookies.currentUser &&
+            cookies.currentUser.role === "admin"
+            ? true
+            : false;
+    }, [cookies]);
 
     const createMutation = useMutation({
         mutationFn: addBill,
@@ -71,6 +89,7 @@ export default function Expenses() {
                     <TextInput
                         radius="lg"
                         placeholder="Type your expenses here..."
+                        label="Title"
                         value={source}
                         onChange={(event) => {
                             setSource(event.target.value);
@@ -80,6 +99,7 @@ export default function Expenses() {
                     <NumberInput
                         radius="lg"
                         placeholder="Type your amount here..."
+                        label="Amount(RM)"
                         value={amount}
                         onChange={setAmount}
                     />
@@ -87,6 +107,7 @@ export default function Expenses() {
                     <Select
                         radius="lg"
                         placeholder="Select a Category"
+                        label="Category"
                         data={[
                             "Food & Drink",
                             "Transport",
@@ -104,11 +125,12 @@ export default function Expenses() {
 
                     <Space h="30px" />
                     <Button
-                        color="blue"
+                        color="red"
                         fullWidth
                         mt="md"
                         radius="md"
                         onClick={handleAddNewExpenses}
+                        disabled={isUser || isAdmin ? false : true}
                     >
                         Add Expenses
                     </Button>

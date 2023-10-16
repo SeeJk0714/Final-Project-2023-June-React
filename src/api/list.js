@@ -19,35 +19,24 @@ export const addList = async (data) => {
     return response.data;
 };
 
-// export const updateList = async ({ lists, data }) => {
-//     for (let i = 0; i < lists.length; i++) {
-//         const response = await axios({
-//             method: "PUT",
-//             url: API_URL + "/lists/" + lists[i]._id,
-//             headers: {
-//                 "Content-Type": "application/json",
-//             },
-//             data: data,
-//         });
-//     }
-
-//     return true;
-// };
-
-export const ClickList = async (list_id = "") => {
+export const ClickList = async (id) => {
     const response = await axios({
         method: "PUT",
-        url: API_URL + list_id + "/update",
-        // purchased: true,
+        url: API_URL + "/lists/" + id + "/click",
+        headers: {
+            "Content-Type": "application/json",
+        },
     });
     return response.data;
 };
 
-export const UnclickList = async (list_id = "") => {
+export const UnclickList = async (id) => {
     const response = await axios({
         method: "PUT",
-        url: API_URL + list_id + "/unupdate",
-        // purchased: false,
+        url: API_URL + "/lists/" + id + "/unclick",
+        headers: {
+            "Content-Type": "application/json",
+        },
     });
     return response.data;
 };

@@ -9,11 +9,9 @@ import {
     Space,
     Card,
     TextInput,
-    NumberInput,
     Divider,
     Button,
     Group,
-    Textarea,
     Select,
 } from "@mantine/core";
 import { RichTextEditor, Link as EditorLink } from "@mantine/tiptap";
@@ -23,6 +21,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import { addJournal } from "../api/journal";
+import { IoIosAddCircleOutline } from "react-icons/io";
 
 export default function AddJournal() {
     const [cookies] = useCookies(["currentUser"]);
@@ -31,6 +30,22 @@ export default function AddJournal() {
     const [email, setEmail] = useState(currentUser ? currentUser.email : "");
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
+
+    const isUser = useMemo(() => {
+        return cookies &&
+            cookies.currentUser &&
+            cookies.currentUser.role === "user"
+            ? true
+            : false;
+    }, [cookies]);
+
+    const isAdmin = useMemo(() => {
+        return cookies &&
+            cookies.currentUser &&
+            cookies.currentUser.role === "admin"
+            ? true
+            : false;
+    }, [cookies]);
 
     const editor = useEditor({
         extensions: [StarterKit, Underline, EditorLink, Highlight, TextAlign],
@@ -47,7 +62,7 @@ export default function AddJournal() {
                 title: "Journal Added",
                 color: "green",
             });
-            navigate("/journal");
+            navigate("/");
         },
         onError: (error) => {
             notifications.show({
@@ -123,8 +138,13 @@ export default function AddJournal() {
                 />
                 <Space h="50px" />
 
-                <Button fullWidth onClick={handleAddNewJournal}>
-                    Add New Journal
+                <Button
+                    color="green"
+                    fullWidth
+                    onClick={handleAddNewJournal}
+                    disabled={isUser || isAdmin ? false : true}
+                >
+                    Add New Journal <IoIosAddCircleOutline size="20" />
                 </Button>
             </Card>
             <Space h="20px" />
@@ -136,7 +156,7 @@ export default function AddJournal() {
                     size="xs"
                     color="gray"
                 >
-                    Go back to Home
+                    Go back to Journal
                 </Button>
             </Group>
             <Space h="100px" />

@@ -9,12 +9,9 @@ import {
     Space,
     Card,
     TextInput,
-    NumberInput,
     Divider,
     Button,
     Group,
-    Textarea,
-    Select,
 } from "@mantine/core";
 import { RichTextEditor, Link as EditorLink } from "@mantine/tiptap";
 import { useEditor } from "@tiptap/react";
@@ -23,14 +20,16 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import { TimeInput, DatePickerInput } from "@mantine/dates";
-import { IconClock } from "@tabler/icons-react";
 import { getPlan, updatePlan } from "../api/plan";
+import { IconClock } from "@tabler/icons-react";
+import { TiTickOutline } from "react-icons/ti";
 
 export default function EditPlan() {
     const [cookies] = useCookies(["currentUser"]);
     const { currentUser } = cookies;
     const { id } = useParams();
     const navigate = useNavigate();
+    const [plan, setPlan] = useState({});
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [startDate, setStartDate] = useState(null);
@@ -41,6 +40,7 @@ export default function EditPlan() {
         queryKey: ["plan", id],
         queryFn: () => getPlan(id),
         onSuccess: (data) => {
+            setPlan(data);
             setTitle(data.title);
             setContent(data.content);
             setStartDate(new Date(data.startDate));
@@ -50,13 +50,38 @@ export default function EditPlan() {
         },
     });
 
-    const editor = useEditor({
-        extensions: [StarterKit, Underline, EditorLink, Highlight, TextAlign],
-        content: content,
-        onUpdate: ({ editor }) => {
-            setContent(editor.getHTML());
+    const isUser = useMemo(() => {
+        return cookies &&
+            cookies.currentUser &&
+            cookies.currentUser.role === "user"
+            ? true
+            : false;
+    }, [cookies]);
+
+    const isAdmin = useMemo(() => {
+        return cookies &&
+            cookies.currentUser &&
+            cookies.currentUser.role === "admin"
+            ? true
+            : false;
+    }, [cookies]);
+
+    const editor = useEditor(
+        {
+            extensions: [
+                StarterKit,
+                Underline,
+                EditorLink,
+                Highlight,
+                TextAlign,
+            ],
+            content: content,
+            onUpdate: ({ editor }) => {
+                setContent(editor.getHTML());
+            },
         },
-    });
+        [plan]
+    );
 
     const updateMutation = useMutation({
         mutationFn: updatePlan,
@@ -189,20 +214,25 @@ export default function EditPlan() {
                 </Group>
                 <Space h="50px" />
 
-                <Button fullWidth onClick={handleUpdatePlan}>
-                    Edit Plan
+                <Button
+                    color="green"
+                    fullWidth
+                    onClick={handleUpdatePlan}
+                    disabled={isUser || isAdmin ? false : true}
+                >
+                    Edit Plan <TiTickOutline size="20" />
                 </Button>
             </Card>
             <Space h="20px" />
             <Group position="center">
                 <Button
                     component={Link}
-                    to="/"
+                    to="/plan"
                     variant="subtle"
                     size="xs"
                     color="gray"
                 >
-                    Go back to Home
+                    Go back to Plan
                 </Button>
             </Group>
             <Space h="100px" />

@@ -30,3 +30,14 @@ export const createBudget = async ({ data, token = "" }) => {
     });
     return response.data;
 };
+
+export const deleteBudget = async ({ id = "", token = "" }) => {
+    const response = await axios({
+        method: "DELETE",
+        url: API_URL + "/budgets/" + id,
+        headers: {
+            Authorization: "Bearer " + token,
+        },
+    });
+    return response.data;
+};

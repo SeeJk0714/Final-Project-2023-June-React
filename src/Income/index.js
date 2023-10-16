@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { notifications } from "@mantine/notifications";
-import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useCookies } from "react-cookie";
 import {
@@ -13,8 +13,6 @@ import {
     NumberInput,
     Container,
     Select,
-    Table,
-    Text,
 } from "@mantine/core";
 import { addBill } from "../api/bill";
 import { getBudget } from "../api/budget";
@@ -32,6 +30,22 @@ export default function Income() {
         queryKey: ["budget", id],
         queryFn: () => getBudget(id),
     });
+
+    const isUser = useMemo(() => {
+        return cookies &&
+            cookies.currentUser &&
+            cookies.currentUser.role === "user"
+            ? true
+            : false;
+    }, [cookies]);
+
+    const isAdmin = useMemo(() => {
+        return cookies &&
+            cookies.currentUser &&
+            cookies.currentUser.role === "admin"
+            ? true
+            : false;
+    }, [cookies]);
 
     const createMutation = useMutation({
         mutationFn: addBill,
@@ -65,7 +79,7 @@ export default function Income() {
 
     return (
         <>
-            <Title order={3} align="center">
+            <Title order={3} size="30" align="center">
                 Income
             </Title>
             <Space h="20px" />
@@ -75,6 +89,7 @@ export default function Income() {
                     <TextInput
                         radius="lg"
                         placeholder="Type your income here..."
+                        label="Title"
                         value={source}
                         onChange={(event) => {
                             setSource(event.target.value);
@@ -84,6 +99,7 @@ export default function Income() {
                     <NumberInput
                         radius="lg"
                         placeholder="Type your amount here..."
+                        label="Amount(RM)"
                         value={amount}
                         onChange={setAmount}
                     />
@@ -91,17 +107,19 @@ export default function Income() {
                     <Select
                         radius="lg"
                         placeholder="Select a Category"
+                        label="Category"
                         data={["Salary", "Other"]}
                         value={category}
                         onChange={setCategory}
                     />
                     <Space h="30px" />
                     <Button
-                        color="blue"
+                        color="teal"
                         fullWidth
                         mt="md"
                         radius="md"
                         onClick={handleAddNewIncome}
+                        disabled={isUser || isAdmin ? false : true}
                     >
                         Add Income
                     </Button>
@@ -115,14 +133,6 @@ export default function Income() {
                         color="gray"
                     >
                         Go back to Bill
-                    </Button>
-                    <Button
-                        component={Link}
-                        to="/budget"
-                        variant="outline"
-                        color="gray"
-                    >
-                        Go back to Budget
                     </Button>
                 </Group>
             </Container>
